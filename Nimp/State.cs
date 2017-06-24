@@ -21,6 +21,7 @@ namespace Nimp
         private long _d;
         private long _s;
         private long _t;
+        private int _shift;
 
         public State()
         {
@@ -39,6 +40,7 @@ namespace Nimp
             _d = Utilities.GetD(instruction);
             _s = Utilities.GetS(instruction);
             _t = Utilities.GetT(instruction);
+            _shift = Utilities.GetShift(instruction);
 
             switch(_opcode)
             {
@@ -75,39 +77,129 @@ namespace Nimp
 
         private void HandleALU(uint instruction)
         {
-            switch (_func)
+            switch ((AluFuncs)_func)
             {
-                case 0x08:
-                    PC = unchecked((uint)Registers[_s]);
+                #region addition, subtraction
+                case AluFuncs.ADD:
+                case AluFuncs.ADDU:
+                    Registers[_d] = Registers[_s] + Registers[_t];
                     break;
-                case 0x10:
-                    Registers[_d] = HI;
+                case AluFuncs.SUB:
+                case AluFuncs.SUBU:
+                    Registers[_d] = Registers[_s] - Registers[_t];
                     break;
-                case 0x12:
-                    Registers[_d] = LO;
-                    break;
-                case 0x18:
-                case 0x19:
-                    long mult = Registers[_s] * Registers[_t];
-                    HI = unchecked((int)((mult & (long)0xFFFFFFFF00000000) >> 32));
-                    LO = unchecked((int)(mult & 0x00000000FFFFFFFF));
-                    break;
-                case 0x1A:
-                case 0x1B:
+                #endregion
+
+                #region division, multiplication
+                case AluFuncs.DIV:
+                case AluFuncs.DIVU:
                     if (Registers[_t] != 0)
                     {
                         HI = Registers[_s] / Registers[_t];
                         LO = Registers[_s] % Registers[_t];
                     }
                     break;
-                case 0x20:
-                case 0x21:
-                    Registers[_d] = Registers[_s] + Registers[_t];
+                case AluFuncs.MULT:
+                case AluFuncs.MULTU:
+                    long mult = Registers[_s] * Registers[_t];
+                    HI = unchecked((int)((mult & (long)0xFFFFFFFF00000000) >> 32));
+                    LO = unchecked((int)(mult & 0x00000000FFFFFFFF));
                     break;
-                case 0x24:
+                #endregion
+
+                #region bitwise
+                case AluFuncs.AND:
                     Registers[_d] = Registers[_s] & Registers[_t];
                     break;
+                case AluFuncs.OR:
+                    Registers[_d] = Registers[_s] | Registers[_t];
+                    break;
+                case AluFuncs.XOR:
+                    Registers[_d] = Registers[_s] ^ Registers[_t];
+                    break;
+                case AluFuncs.NOR:
+                    Registers[_d] = ~(Registers[_s] | Registers[_t]);
+                    break;
+                #endregion
+
+                #region jump
+                case AluFuncs.JR:
+                    PC = unchecked((uint)Registers[_s]);
+                    break;
+                #endregion
+
+                #region mfhi, mflo
+                case AluFuncs.MFHI:
+                    Registers[_d] = HI;
+                    break;
+                case AluFuncs.MFLO:
+                    Registers[_d] = LO;
+                    break;
+                #endregion
+
+                #region shifts
+                case AluFuncs.SLL:
+                    Registers[_d] = Registers[_t] << _shift;
+                    break;
+                case AluFuncs.SLLV:
+                    Registers[_d] = Registers[_t] << Registers[_s];
+                    break;
+                case AluFuncs.SRA:
+                    Registers[_d] = Registers[_t] >> _shift;
+                    break;
+                case AluFuncs.SRAV:
+                    Registers[_d] = Registers[_t] >> Registers[_s];
+                    break;
+                case AluFuncs.SRL:
+                    Registers[_d] = unchecked((int)((uint)Registers[_t] >> _shift));
+                    break;
+                case AluFuncs.SRLV:
+                    Registers[_d] = unchecked((int)((uint)Registers[_t] >> Registers[_s]));
+                    break;
+                #endregion
+
+                #region conditionals
+                case AluFuncs.SLT:
+                    Registers[_d] = (Registers[_s] < Registers[_t]) ? 1 : 0;
+                    break;
+                case AluFuncs.SLTU:
+                    Registers[_d] = unchecked((uint)Registers[_s] < (uint)Registers[_t]) ? 1 : 0;
+                    break;
+                #endregion
             }
         }
+    }
+
+    public enum AluFuncs
+    {
+        ADD = 0x20,
+        ADDU = 0x21,
+        SUB = 0x22,
+        SUBU = 0x23,
+
+        AND = 0x24,
+        NOR = 0x27,
+        XOR = 0x26,
+        OR = 0x25,
+
+        MULT = 0x18,
+        MULTU = 0x19,
+        DIV = 0x1A,
+        DIVU = 0x1B,
+
+        MFHI = 0x10,
+        MFLO = 0x12,
+
+        JR = 0x08,
+
+        SLT = 0x2A,
+        SLTU = 0x2B,
+
+        SLL = 0x00,
+        SLLV = 0x04,
+        SRL = 0x02,
+        SRLV = 0x06,
+        SRA = 0x03,
+        SRAV = 0x07,
     }
 }

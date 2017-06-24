@@ -44,6 +44,12 @@ namespace Nimp
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GetShift(uint word)
+        {
+            return (int)((word & (0x1F << 6)) >> 6);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetI(uint word)
         {
             return (int)(word & (0xFFFF));
