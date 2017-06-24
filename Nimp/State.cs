@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -22,40 +23,64 @@ namespace Nimp
         private long _s;
         private long _t;
         private int _shift;
+        private uint _jumped = 4;
+
+        public ulong Count = 0;
 
         public State()
         {
 
         }
 
+        public void Loop()
+        {
+            while(true)
+            {
+                Step();
+                Count++;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Step()
         {
-            uint instruction = Memory.ReadWord(PC);
+            Decode();
+            Execute();
+        }
 
-            Utilities.DumpInstruction(instruction);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Decode()
+        {
+            uint word = Memory.ReadWord(PC);
+            _opcode = (word & (0x3F << 26)) >> 26;
+            _s = (word & (0x1F << 21)) >> 21;
+            _t = (word & (0x1F << 16)) >> 16;
+            _d = (word & (0x1F << 11)) >> 11;
+            _shift = (int)((word & (0x1F << 6)) >> 6);
+            _i = (int)(word & (0xFFFF));
+            _func = word & (0x3F);
 
-            _opcode = Utilities.GetOpcode(instruction);
-            _func = Utilities.GetFunc(instruction);
-            _i = Utilities.GetI(instruction);
-            _d = Utilities.GetD(instruction);
-            _s = Utilities.GetS(instruction);
-            _t = Utilities.GetT(instruction);
-            _shift = Utilities.GetShift(instruction);
+            //Utilities.DumpInstruction(word);
+        }
 
-            switch(_opcode)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Execute()
+        {
+            switch (_opcode)
             {
                 case 0x00:
-                    HandleALU(instruction);
+                    HandleALU();
                     break;
                 case 0x08:
                 case 0x09: // TODO: handle addiu separately
-                    Registers[_t] = (int)(_i + Registers[_s]);
+                    Registers[_t] = (_i + Registers[_s]);
                     break;
             }
 
-            DumpRegisters();
+            //DumpRegisters();
 
-            PC += 4;
+            PC += _jumped;
+            _jumped = 4;
         }
 
         private void DumpRegisters()
@@ -75,7 +100,8 @@ namespace Nimp
                 Console.WriteLine();
         }
 
-        private void HandleALU(uint instruction)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void HandleALU()
         {
             switch ((AluFuncs)_func)
             {
@@ -125,6 +151,7 @@ namespace Nimp
                 #region jump
                 case AluFuncs.JR:
                     PC = unchecked((uint)Registers[_s]);
+                    _jumped = 0;
                     break;
                 #endregion
 

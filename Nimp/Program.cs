@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Nimp
@@ -10,22 +13,29 @@ namespace Nimp
     {
         static void Main(string[] args)
         {
-            uint addi1 = 0x20010002;
-            uint addi2 = 0x2002000F;
-            uint addu = 0x22f821; // 0000 0000 0010 0010 1111 1000 0010 0001
-                                  // 000000 00001 00010 11111 00000 100001
-                                  // opcode  $s    $t    $d   shift  func
+            var reader = new StreamReader("./mips.hex");
 
             State s = new State();
-            s.Memory.WriteWord(addi1, 0);
-            s.Memory.WriteWord(addi2, 4);
-            s.Memory.WriteWord(addu, 8);
+            int counter = 0;
 
-            s.Step();
-            s.Step();
-            s.Step();
+            while(!reader.EndOfStream)
+            {
+                string line = reader.ReadLine();
+                uint word = Convert.ToUInt32(line, 16);
+                s.Memory.WriteWord(word, (uint)counter++ * 4);
+            }
 
-            Console.ReadLine();
+            Task.Factory.StartNew(s.Loop);
+
+            ulong last_count = 0;
+
+            while(true)
+            {
+                Thread.Sleep(1000);
+                ulong count = s.Count;
+                Console.WriteLine("{0:0.00} MIPS", (count - last_count) / 1000000d);
+                last_count = count;
+            }
         }
     }
 }
