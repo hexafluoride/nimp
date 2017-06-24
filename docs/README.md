@@ -1,0 +1,2 @@
+# Various documentation
+This directory contains various docs about the MIPS architecture and its implementations(particularly, the SGI IP22(trade names include Indy and Indigo)). I do not claim any sort of rights over these files. All copyright belongs to their owners. These are just here for reference and educational purposes. Please don't sue me.
