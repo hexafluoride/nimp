@@ -97,7 +97,7 @@ namespace Nimp
                     if (Registers[_t] != 0)
                     {
                         HI = Registers[_s] / Registers[_t];
-                        LO = Registers[_s] / Registers[_t];
+                        LO = Registers[_s] % Registers[_t];
                     }
                     break;
                 case 0x20:
