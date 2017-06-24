@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,26 +19,37 @@ namespace Nimp
                 GetFunc(i));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // just to be safe
         public static long GetOpcode(uint word)
         {
             return (word & (0x3F << 26)) >> 26;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long GetS(uint word)
         {
             return (word & (0x1F << 21)) >> 21;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long GetT(uint word)
         {
             return (word & (0x1F << 16)) >> 16;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long GetD(uint word)
         {
             return (word & (0x1F << 11)) >> 11;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GetI(uint word)
+        {
+            return (int)(word & (0xFFFF));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long GetFunc(uint word)
         {
             return word & (0x3F);
