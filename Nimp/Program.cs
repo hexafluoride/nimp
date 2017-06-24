@@ -15,9 +15,12 @@ namespace Nimp
                                   // 000000 00001 00010 11111 00000 100001
                                   // opcode  $s    $t    $d   shift  func
 
-            Memory m = new Memory();
-            m.DumpInstruction(mflo);
-            m.DumpInstruction(addu);
+            State s = new State();
+            s.Memory.WriteWord(mflo, 0);
+            s.Memory.WriteWord(addu, 4);
+
+            s.Step();
+            s.Step();
 
             Console.ReadLine();
         }
