@@ -11,12 +11,26 @@ namespace Nimp
     {
         public static void DumpInstruction(uint i)
         {
-            Console.WriteLine("opcode: 0x{0:X2}, $s: ${1:00}, $t: ${2:00}, $d: ${3:00}, func: 0x{4:X2}",
+            var op = (int)GetOpcode(i);
+            var func = (int)GetFunc(i);
+
+            var op_str = "";
+            var func_str = "";
+
+            if (Enum.IsDefined(typeof(Opcodes), op))
+                op_str = string.Format("({0})", Enum.GetName(typeof(Opcodes), op));
+
+            if (op == 0x00 && Enum.IsDefined(typeof(AluFuncs), func))
+                func_str = string.Format("({0})", Enum.GetName(typeof(AluFuncs), func));
+
+            Console.WriteLine("opcode: 0x{0:X2}{5}, $s: ${1:00}, $t: ${2:00}, $d: ${3:00}, func: 0x{4:X2}{6}",
                 GetOpcode(i),
                 GetS(i),
                 GetT(i),
                 GetD(i),
-                GetFunc(i));
+                GetFunc(i),
+                op_str,
+                func_str);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // just to be safe

@@ -16,13 +16,26 @@ namespace Nimp
             var reader = new StreamReader("./mips.hex");
 
             State s = new State();
-            int counter = 0;
+            uint counter = 0x400000;
 
             while(!reader.EndOfStream)
             {
                 string line = reader.ReadLine();
-                uint word = Convert.ToUInt32(line, 16);
-                s.Memory.WriteWord(word, (uint)counter++ * 4);
+
+                if (!line.Contains(" "))
+                    continue;
+
+                try
+                {
+                    string w = line.Split(' ')[1];
+                    uint word = Convert.ToUInt32(w, 16);
+
+                    s.Memory.WriteWord(word, counter);
+                    counter += 4;
+                }
+                catch
+                {
+                }
             }
 
             Task.Factory.StartNew(s.Loop);
@@ -33,7 +46,7 @@ namespace Nimp
             {
                 Thread.Sleep(1000);
                 ulong count = s.Count;
-                Console.WriteLine("{0:0.00} MIPS", (count - last_count) / 1000000d);
+                //Console.WriteLine("{0:0.00} MIPS", (count - last_count) / 1000000d);
                 last_count = count;
             }
         }

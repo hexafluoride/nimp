@@ -8,7 +8,7 @@ namespace Nimp
 {
     public class Memory
     {
-        public byte[] Buffer = new byte[2 << 16];
+        public byte[] Buffer = new byte[2 << 24];
 
         public Memory()
         {
