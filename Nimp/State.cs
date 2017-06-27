@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -25,6 +26,7 @@ namespace Nimp
         private long _t;
         private int _shift;
         private uint _jumped = 4;
+        private Stopwatch sw;
 
         private bool running = true;
         private bool step = true;
@@ -44,6 +46,8 @@ namespace Nimp
             Registers[29] = 0xffff00;
             Registers[28] = 0x100000;
 
+            sw = Stopwatch.StartNew();
+
             while(running)
             {
                 Step();
@@ -55,6 +59,9 @@ namespace Nimp
                 }
 #endif
             }
+
+            sw.Stop();
+            Console.WriteLine("Executed {0} instructions in {1} milliseconds({2:0.00} MIPS)", Count, sw.ElapsedMilliseconds, (Count / (sw.ElapsedMilliseconds / 1000d)) / 1000000d);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -98,7 +105,7 @@ namespace Nimp
                 #region addition
                 case Opcodes.ADDI:
                 case Opcodes.ADDIU: // TODO: handle addiu separately
-                    Registers[_t] = (_i + Registers[_s]);
+                    Registers[_t] = (unchecked((short)_i) + Registers[_s]);
                     break;
                 #endregion
 
