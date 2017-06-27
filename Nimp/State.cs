@@ -27,6 +27,7 @@ namespace Nimp
         private uint _jumped = 4;
 
         private bool running = true;
+        private bool step = true;
 
         public ulong Count = 0;
 
@@ -48,7 +49,10 @@ namespace Nimp
                 Step();
                 Count++;
 #if STEP
-                Console.ReadKey(true);
+                if (step)
+                {
+                    step = char.ToLower(Console.ReadKey(true).KeyChar) != 'c';
+                }
 #endif
             }
         }
@@ -100,6 +104,9 @@ namespace Nimp
                 case Opcodes.ORI:
                     Registers[_t] = (_i | Registers[_s]);
                     break;
+                case Opcodes.XORI:
+                    Registers[_t] = (_i ^ Registers[_s]);
+                    break;
                 case Opcodes.JAL:
                     Registers[31] = unchecked((int)PC + 4);
                     i = (_instruction & 0x3FFFFFF) << 2;
@@ -142,6 +149,13 @@ namespace Nimp
                     break;
                 case Opcodes.SW:
                     Memory.WriteWord(unchecked((uint)Registers[_t]), unchecked((uint)(_i + Registers[_s])));
+                    break;
+                case Opcodes.SLTI:
+                    Registers[_t] = Registers[_s] < unchecked((short)_i) ? 1 : 0;
+                    break;
+                case Opcodes.SLTIU:
+                    Registers[_t] = unchecked((uint)Registers[_s] < (ushort)_i) ? 1 : 0; // SPIM seems to also treat $s as unsigned
+                                                                                         // don't know if that's correct
                     break;
                 default:
                     Console.Write("Unrecognized instruction: ");
@@ -336,6 +350,7 @@ namespace Nimp
         SLTIU = 0x0B,
         ANDI = 0x0C,
         ORI = 0x0D,
+        XORI = 0x0E,
         LUI = 0x0F,
         MFC0 = 0x10,
         LB = 0x20,
