@@ -94,10 +94,15 @@ namespace Nimp
                 case Opcodes.ALU:
                     HandleALU();
                     break;
+
+                #region addition
                 case Opcodes.ADDI:
                 case Opcodes.ADDIU: // TODO: handle addiu separately
                     Registers[_t] = (_i + Registers[_s]);
                     break;
+                #endregion
+
+                #region bitwise
                 case Opcodes.ANDI:
                     Registers[_t] = (_i & Registers[_s]);
                     break;
@@ -107,6 +112,9 @@ namespace Nimp
                 case Opcodes.XORI:
                     Registers[_t] = (_i ^ Registers[_s]);
                     break;
+                #endregion
+
+                #region jump
                 case Opcodes.JAL:
                     Registers[31] = unchecked((int)PC + 4);
                     i = (_instruction & 0x3FFFFFF) << 2;
@@ -118,6 +126,9 @@ namespace Nimp
                     PC = (PC & 0xf0000000) | i;
                     _jumped = 0;
                     break;
+                #endregion
+
+                #region loads
                 case Opcodes.LB:
                     Registers[_t] = unchecked((int)(Memory.ReadWord((uint)_i) & 0x800000FF));
                     break;
@@ -140,6 +151,9 @@ namespace Nimp
                 case Opcodes.LW:
                     Registers[_t] = unchecked((int)Memory.ReadWord((uint)(Registers[_s] + _i)));
                     break;
+                #endregion
+
+                #region stores
                 case Opcodes.SB:
                     Memory.Buffer[_i] = unchecked((byte)(Registers[_t] & 0xFF));
                     break;
@@ -150,6 +164,9 @@ namespace Nimp
                 case Opcodes.SW:
                     Memory.WriteWord(unchecked((uint)Registers[_t]), unchecked((uint)(_i + Registers[_s])));
                     break;
+                #endregion
+
+                #region comparison
                 case Opcodes.SLTI:
                     Registers[_t] = Registers[_s] < unchecked((short)_i) ? 1 : 0;
                     break;
@@ -157,13 +174,61 @@ namespace Nimp
                     Registers[_t] = unchecked((uint)Registers[_s] < (ushort)_i) ? 1 : 0; // SPIM seems to also treat $s as unsigned
                                                                                          // don't know if that's correct
                     break;
-                case Opcodes.BNE:
-                    if(Registers[_t] != Registers[_s])
+                #endregion
+
+                #region branch
+                case Opcodes.BNE: // TODO: check out delayed branch/load
+                    if (Registers[_t] != Registers[_s])
                     {
                         unchecked { PC = (uint)(PC + ((short)_i) * 4); }
                         _jumped = 0;
                     }
                     break;
+                case Opcodes.BEQ:
+                    if (Registers[_t] == Registers[_s])
+                    {
+                        unchecked { PC = (uint)(PC + ((short)_i) * 4); }
+                        _jumped = 0;
+                    }
+                    break;
+                case Opcodes.BGEZ:
+                    if (_t == 11 || _t == 16)
+                    {
+                        Registers[31] = unchecked((int)PC + 4);
+                    }
+                    if (_t == 1 || _t == 11)
+                    {
+                        if (Registers[_s] >= 0)
+                        {
+                            unchecked { PC = (uint)(PC + ((short)_i) * 4); }
+                            _jumped = 0;
+                        }
+                    }
+                    if (_t == 0 || _t == 16)
+                    {
+                        if (Registers[_s] < 0)
+                        {
+                            unchecked { PC = (uint)(PC + ((short)_i) * 4); }
+                            _jumped = 0;
+                        }
+                    }
+                    break;
+                case Opcodes.BGTZ:
+                    if (Registers[_s] > 0)
+                    {
+                        unchecked { PC = (uint)(PC + ((short)_i) * 4); }
+                        _jumped = 0;
+                    }
+                    break;
+                case Opcodes.BLEZ:
+                    if (Registers[_s] <= 0)
+                    {
+                        unchecked { PC = (uint)(PC + ((short)_i) * 4); }
+                        _jumped = 0;
+                    }
+                    break;
+                #endregion
+
                 default:
                     Console.Write("Unrecognized instruction: ");
                     Utilities.DumpInstruction(_instruction);
@@ -196,7 +261,7 @@ namespace Nimp
         {
             switch ((AluFuncs)_func)
             {
-#region addition, subtraction
+                #region addition, subtraction
                 case AluFuncs.ADD:
                 case AluFuncs.ADDU:
                     Registers[_d] = Registers[_s] + Registers[_t];
@@ -205,9 +270,9 @@ namespace Nimp
                 case AluFuncs.SUBU:
                     Registers[_d] = Registers[_s] - Registers[_t];
                     break;
-#endregion
+                #endregion
 
-#region division, multiplication
+                #region division, multiplication
                 case AluFuncs.DIV:
                 case AluFuncs.DIVU:
                     if (Registers[_t] != 0)
@@ -222,9 +287,9 @@ namespace Nimp
                     HI = unchecked((int)((mult & (long)0xFFFFFFFF00000000) >> 32));
                     LO = unchecked((int)(mult & 0x00000000FFFFFFFF));
                     break;
-#endregion
+                #endregion
 
-#region bitwise
+                #region bitwise
                 case AluFuncs.AND:
                     Registers[_d] = Registers[_s] & Registers[_t];
                     break;
@@ -237,25 +302,30 @@ namespace Nimp
                 case AluFuncs.NOR:
                     Registers[_d] = ~(Registers[_s] | Registers[_t]);
                     break;
-#endregion
+                #endregion
 
-#region jump
+                #region jump
                 case AluFuncs.JR:
                     PC = unchecked((uint)Registers[_s]);
                     _jumped = 0;
                     break;
-#endregion
+                case AluFuncs.JALR:
+                    Registers[31] = unchecked((int)PC + 4);
+                    PC = unchecked((uint)Registers[_s]);
+                    _jumped = 0;
+                    break;
+                #endregion
 
-#region mfhi, mflo
+                #region mfhi, mflo
                 case AluFuncs.MFHI:
                     Registers[_d] = HI;
                     break;
                 case AluFuncs.MFLO:
                     Registers[_d] = LO;
                     break;
-#endregion
+                #endregion
 
-#region shifts
+                #region shifts
                 case AluFuncs.SLL:
                     Registers[_d] = Registers[_t] << _shift;
                     break;
@@ -274,16 +344,16 @@ namespace Nimp
                 case AluFuncs.SRLV:
                     Registers[_d] = unchecked((int)((uint)Registers[_t] >> Registers[_s]));
                     break;
-#endregion
+                #endregion
 
-#region conditionals
+                #region conditionals
                 case AluFuncs.SLT:
                     Registers[_d] = (Registers[_s] < Registers[_t]) ? 1 : 0;
                     break;
                 case AluFuncs.SLTU:
                     Registers[_d] = unchecked((uint)Registers[_s] < (uint)Registers[_t]) ? 1 : 0;
                     break;
-#endregion
+                #endregion
 
                 case AluFuncs.SYSCALL: // SPIM-like syscall facilities
                     switch(Registers[2])
@@ -335,6 +405,7 @@ namespace Nimp
         MFHI = 0x10,
         MFLO = 0x12,
 
+        JALR = 0x09,
         JR = 0x08,
 
         SLT = 0x2A,
@@ -353,10 +424,14 @@ namespace Nimp
     public enum Opcodes
     {
         ALU = 0x00,
+        BLTZ = 0x01,
         J = 0x02,
         JAL = 0x03,
         BEQ = 0x04,
         BNE = 0x05,
+        BLEZ = 0x06,
+        BGEZ = 0x01,
+        BGTZ = 0x07,
         ADDI = 0x08,
         ADDIU = 0x09,
         SLTI = 0x0A,
