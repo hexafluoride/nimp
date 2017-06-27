@@ -26,6 +26,8 @@ namespace Nimp
         private int _shift;
         private uint _jumped = 4;
 
+        private bool running = true;
+
         public ulong Count = 0;
 
         public State()
@@ -35,11 +37,13 @@ namespace Nimp
 
         public void Loop()
         {
+            running = true;
+
             // mock memory layout
             Registers[29] = 0xffffff;
             Registers[28] = 0x108000;
 
-            while(true)
+            while(running)
             {
                 Step();
                 Count++;
@@ -137,7 +141,7 @@ namespace Nimp
                     Memory.Buffer[_i + 1] = unchecked((byte)(Registers[_t] & 0xFF));
                     break;
                 case Opcodes.SW:
-                    Memory.WriteWord(unchecked((uint)Registers[_t]), unchecked((uint)_i));
+                    Memory.WriteWord(unchecked((uint)Registers[_t]), unchecked((uint)(_i + Registers[_s])));
                     break;
                 default:
                     Console.Write("Unrecognized instruction: ");
@@ -268,6 +272,7 @@ namespace Nimp
                             break;
                         case 10:
                             Console.WriteLine("Exit SYSCALL");
+                            running = false;
                             break;
                         case 11:
                             Console.Write((char)Registers[4]);
