@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -27,11 +28,15 @@ namespace Nimp
 
                 try
                 {
-                    string w = line.Split(' ')[1];
-                    uint word = Convert.ToUInt32(w, 16);
+                    var words = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    string a = line.Split(' ')[0].Trim('[', ']');
 
-                    s.Memory.WriteWord(word, counter);
-                    counter += 4;
+                    uint start = Convert.ToUInt32(a, 16);
+                    uint test = 0;
+                    int count = uint.TryParse(words[2], NumberStyles.HexNumber, null, out test) ? 4 : 1;
+                    
+                    for (uint i = 0; i < 4; i++)
+                        s.Memory.WriteWord(Convert.ToUInt32(words[i + 1], 16), start + (i * 4));
                 }
                 catch
                 {

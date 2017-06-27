@@ -41,8 +41,8 @@ namespace Nimp
             running = true;
 
             // mock memory layout
-            Registers[29] = 0xffffff;
-            Registers[28] = 0x108000;
+            Registers[29] = 0xffff00;
+            Registers[28] = 0x100000;
 
             while(running)
             {
@@ -156,6 +156,13 @@ namespace Nimp
                 case Opcodes.SLTIU:
                     Registers[_t] = unchecked((uint)Registers[_s] < (ushort)_i) ? 1 : 0; // SPIM seems to also treat $s as unsigned
                                                                                          // don't know if that's correct
+                    break;
+                case Opcodes.BNE:
+                    if(Registers[_t] != Registers[_s])
+                    {
+                        unchecked { PC = (uint)(PC + ((short)_i) * 4); }
+                        _jumped = 0;
+                    }
                     break;
                 default:
                     Console.Write("Unrecognized instruction: ");
@@ -283,6 +290,12 @@ namespace Nimp
                     {
                         case 1:
                             Console.Write(Registers[4]);
+                            break;
+                        case 4:
+                            for(uint p = unchecked((uint)Registers[4]); Memory.Buffer[p] > 0; p++)
+                            {
+                                Console.Write((char)Memory.Buffer[p]);
+                            }
                             break;
                         case 10:
                             Console.WriteLine("Exit SYSCALL");
