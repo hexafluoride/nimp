@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -14,21 +15,29 @@ namespace Nimp
         public static int HI = 0;
         public static int LO = 0;
 
+        static uint _old_pc = 0x400000;
         public static uint PC = 0x400000;
 
-        public static uint _instruction;
-        public static long _opcode;
-        public static long _func;
-        public static int _i;
-        public static long _d;
-        public static long _s;
-        public static long _t;
-        public static int _shift;
-        public static uint _jumped = 4;
-        public static Stopwatch sw;
+        static uint _instruction;
+        static long _opcode;
+        static long _func;
+        static int _i;
+        static long _d;
+        static long _s;
+        static long _t;
+        static int _shift;
+        static uint _jumped = 4;
+        static Stopwatch sw;
 
-        public static bool running = true;
-        public static bool step = true;
+        static bool running = true;
+        static bool step = true;
+        static bool quiet = false;
+        static bool step_once = true;
+
+        static uint _break_pc = uint.MaxValue;
+        static uint _break_opcode = uint.MaxValue;
+        static uint _break_func = uint.MaxValue;
+        static long _break_count = -1;
 
         public static ulong Count = 0;
 
@@ -44,18 +53,221 @@ namespace Nimp
 
             while(running)
             {
-                Step();
-                Count++;
+                Decode();
+                #region interface
 #if STEP
-                if (step)
+                if (step || step_once || BrokeLastCycle())
                 {
-                    step = char.ToLower(Console.ReadKey(true).KeyChar) != 'c';
+                    start_step:
+                    string line = Utilities.SmartReadline();
+                    var words = line.Split(' ');
+                    var command = words[0].ToLower();
+                    var arg = words.Skip(1).ToArray();
+
+                    uint addr = 0;
+                    int reg = 0;
+
+                    switch(command)
+                    {
+                        case "b":
+                        case "break":
+                            addr = 0;
+                            Opcodes opcode;
+                            AluFuncs func;
+
+                            if (arg.Length == 0)
+                            {
+                                Console.WriteLine("Usage: break [0x<addr> | <opcode> | <func> | clear]");
+                                goto start_step;
+                            }
+
+                            if (arg[0].ToLower().StartsWith("0x"))
+                                arg[0] = arg[0].Substring(2);
+
+                            ClearBreakpoint();
+
+                            if(uint.TryParse(arg[0], NumberStyles.HexNumber, null, out addr))
+                            {
+                                // treat this as a PC
+                                _break_pc = addr;
+                                step = step_once = false;
+                            }
+                            else if (Enum.TryParse(arg[0], true, out opcode))
+                            {
+                                _break_opcode = (uint)opcode;
+                                step = step_once = false;
+                            }
+                            else if (Enum.TryParse(arg[0], true, out func))
+                            {
+                                _break_func = (uint)func;
+                                step = step_once = false;
+                            }
+                            else if(arg[0] == "clear")
+                            {
+                                ClearBreakpoint();
+                                step = step_once = false;
+                            }
+                            break;
+                        case "s":
+                        case "step":
+                            uint count = 0;
+
+                            if(arg.Length == 0)
+                            {
+                                Console.WriteLine("Usage: step [count]");
+                                goto start_step;
+                            }
+
+                            if(uint.TryParse(arg[0], NumberStyles.Any, null, out count))
+                            {
+                                _break_count = count;
+                                step = step_once = false;
+                            }
+                            break;
+                        case "c":
+                        case "continue":
+                            step = step_once = false;
+                            ClearBreakpoint();
+
+                            if (arg[0].ToLower() == "quiet")
+                                quiet = true;
+                            break;
+                        case "d":
+                        case "dump":
+                            DumpState();
+                            goto start_step;
+                        case "r":
+                        case "reg":
+                        case "register":
+                            if(arg.Length == 0)
+                            {
+                                Console.WriteLine("Usage: register [$<register shorthand> | <register id>]");
+                                goto start_step;
+                            }
+
+                            reg = Utilities.ParseRegister(arg[0]);
+
+                            if(reg == -1)
+                            {
+                                Console.WriteLine("Unrecognized register {0}", arg[0]);
+                            }
+
+                            Console.WriteLine("{0} = {1:X8} ({1})", Utilities.RegisterNames[reg], Registers[reg]);
+                            goto start_step;
+                        case "m":
+                        case "mem":
+                        case "memory":
+                            if(arg.Length == 0)
+                            {
+                                Console.WriteLine("Usage: memory [0x<address> | $<register shorthand> | <register id>]");
+                                goto start_step;
+                            }
+
+                            arg[0] = arg[0].ToLower();
+                            addr = 0;
+
+                            if(!uint.TryParse(arg[0], NumberStyles.HexNumber, null, out addr))
+                            {
+                                reg = Utilities.ParseRegister(arg[0]);
+
+                                if (reg == -1)
+                                {
+                                    Console.WriteLine("Unrecognized memory address {0}", arg[0]);
+                                    goto start_step;
+                                }
+
+                                addr = unchecked((uint)Registers[reg]);
+                            }
+
+                            Console.WriteLine("{0:X8} = {1:X8} ({1})", addr, Memory.ReadWord(addr));
+                            Console.WriteLine("         =     {0:X4} ({0})", Memory.ReadWord(addr) >> 16);
+                            Console.WriteLine("         =       {0:X2} ({0})", Memory.ReadWord(addr) >> 24);
+                            goto start_step;
+                        case "step-once":
+                            step_once = true;
+                            break;
+                        case "step-until-break":
+                            step = step_once = false;
+                            break;
+                        case "step-smart":
+                            if (BreakpointSet())
+                                step = step_once = false;
+                            else
+                                step_once = true;
+                            break;
+                    }
                 }
 #endif
+                #endregion
+                Execute();
+                Count++;
             }
 
             sw.Stop();
             Console.WriteLine("Executed {0} instructions in {1} milliseconds({2:0.00} MIPS)", Count, sw.ElapsedMilliseconds, (Count / (sw.ElapsedMilliseconds / 1000d)) / 1000000d);
+        }
+
+        #region breakpoint helpers
+        public static bool BrokeLastCycle()
+        {
+            return (_break_count == 0 ||
+                    _break_func == _func ||
+                    _break_opcode == _opcode ||
+                    _break_pc == PC);
+        }
+
+        public static bool BreakpointSet()
+        {
+            return _break_count > 0 ||
+                _break_func < uint.MaxValue ||
+                _break_opcode < uint.MaxValue ||
+                _break_pc < uint.MaxValue;
+        }
+
+        public static void ClearBreakpoint()
+        {
+            _break_pc = uint.MaxValue;
+            _break_opcode = uint.MaxValue;
+            _break_func = uint.MaxValue;
+            _break_count = 0;
+        }
+        #endregion
+
+        public static void DumpState()
+        {
+            for(int y = 0; y < 8; y++)
+            { 
+                for(int x = 0; x < 4; x++)
+                {
+                    int register = (y * 4) + x;
+
+                    if (register > 31)
+                        continue;
+
+                    int value = Registers[register];
+                    string name = Utilities.RegisterNames[register];
+
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.Write((name + " = "));
+
+                    if(value != 0)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkCyan;
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                    }
+
+                    Console.Write(value.ToString("X8"));
+                    Console.Write(" ");
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                }
+
+                Console.WriteLine();
+            }
+            Console.Write("[{0:X8}] ", PC);
+            Utilities.DumpInstruction(_instruction);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -79,8 +291,16 @@ namespace Nimp
             _func = word & (0x3F);
 
 #if STEP
-            Console.Write("[{0:X8}] ", PC);
-            Utilities.DumpInstruction(word);
+            if (!quiet)
+            {
+                Console.Write("[{0:X8}] ", PC);
+                Utilities.DumpInstruction(word);
+            }
+            
+            if(_break_count > -1)
+            {
+                _break_count--;
+            }
 #endif
         }
 
@@ -89,6 +309,7 @@ namespace Nimp
         {
             Registers[0] = 0;
             uint i;
+            _old_pc = PC;
 
             switch ((Opcodes)_opcode)
             {
@@ -237,7 +458,7 @@ namespace Nimp
                 #endregion
 
                 default:
-                    Console.Write("Unrecognized instruction: ");
+                    Console.Write("Unrecognized instruction at PC {0:X8}: ", PC);
                     Utilities.DumpInstruction(_instruction);
                     break;
             }
@@ -382,7 +603,6 @@ namespace Nimp
                             }
                             break;
                         case 10:
-                            Console.WriteLine("Exit SYSCALL");
                             running = false;
                             break;
                         case 11:
@@ -392,7 +612,7 @@ namespace Nimp
                     break;
 
                 default:
-                    Console.WriteLine("Unrecognized instruction: ");
+                    Console.Write("Unrecognized instruction at PC {0:X8}: ", PC);
                     Utilities.DumpInstruction(_instruction);
                     break;
             }
