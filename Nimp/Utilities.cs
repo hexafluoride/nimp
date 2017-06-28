@@ -141,6 +141,10 @@ namespace Nimp
                     autocomplete_left = possibilities[autocomplete_index].Substring(words.Last().Length);
 
                 string possibility_indicator = string.Format("({0} possibilit{1})", possibilities.Count, possibilities.Count == 1 ? "y" : "ies");
+
+                if (4 + buffer.Length + autocomplete_left.Length + 2 + possibility_indicator.Length >= Console.BufferWidth)
+                    autocomplete = false;
+
                 if (!autocomplete)
                     possibility_indicator = "";
 
@@ -152,8 +156,13 @@ namespace Nimp
                 if(4 + buffer.Length + autocomplete_left.Length + 2 + possibility_indicator.Length >= Console.BufferWidth)
                 {
                     int offset = (4 + buffer.Length + autocomplete_left.Length + 2 + possibility_indicator.Length) - Console.BufferWidth;
-                    Console.Write(buffer.Substring(offset));
                     cursor -= offset;
+                    int front_offset = cursor - offset - 4;
+                    if (cursor - offset < 4)
+                    {
+
+                    }
+                    Console.Write(buffer.Substring(offset));
                 }
                 else
                     Console.Write(buffer);
@@ -165,7 +174,7 @@ namespace Nimp
                 Console.ForegroundColor = ConsoleColor.Gray;
 
                 Console.Write(new string(' ', Console.BufferWidth - Console.CursorLeft - 1));
-                Console.CursorLeft = index + 4;
+                Console.CursorLeft = cursor;
                 key = Console.ReadKey(true);
 
                 switch(key.Key)
@@ -272,6 +281,9 @@ namespace Nimp
                         break;
                     default:
                         if (key.KeyChar == '\0')
+                            break;
+
+                        if (4 + buffer.Length + autocomplete_left.Length + 2 + possibility_indicator.Length + 1 >= Console.BufferWidth)
                             break;
 
                         if(index == buffer.Length)
