@@ -84,6 +84,9 @@ namespace Nimp
                             if (arg[0].ToLower().StartsWith("0x"))
                                 arg[0] = arg[0].Substring(2);
 
+                            if (arg.Contains("quiet"))
+                                quiet = true;
+
                             ClearBreakpoint();
 
                             if(uint.TryParse(arg[0], NumberStyles.HexNumber, null, out addr))
@@ -129,7 +132,7 @@ namespace Nimp
                             step = step_once = false;
                             ClearBreakpoint();
 
-                            if (arg[0].ToLower() == "quiet")
+                            if (arg.Any() && arg[0].ToLower() == "quiet")
                                 quiet = true;
                             break;
                         case "d":
@@ -190,9 +193,9 @@ namespace Nimp
                             step = step_once = false;
                             break;
                         case "step-smart":
-                            if (BreakpointSet())
-                                step = step_once = false;
-                            else
+                            //if (BreakpointSet())
+                            //    step = step_once = false;
+                            //else
                                 step_once = true;
                             break;
                     }
@@ -352,32 +355,32 @@ namespace Nimp
 
                 #region loads
                 case Opcodes.LB:
-                    Registers[_t] = unchecked((int)(Memory.ReadByte((uint)_i)));
+                    Registers[_t] = unchecked(Memory.ReadByte((uint)(_i + Registers[_s])));
 
                     if ((Registers[_t] & 0x80) == 0x80)
                         Registers[_t] = unchecked((int)(0xffffff80 | (uint)Registers[_t]));
                     break;
                 case Opcodes.LBU:
-                    Registers[_t] = Memory.ReadByte(unchecked((uint)_i));
+                    Registers[_t] = Memory.ReadByte(unchecked((uint)(_i + Registers[_s])));
                     break;
                 case Opcodes.LH:
-                    Registers[_t] = unchecked((int)(Memory.ReadWord((uint)_i + 2) & 0xFFFF));
+                    Registers[_t] = unchecked((int)(Memory.ReadWord((uint)(_i + Registers[_s] + 2)) & 0xFFFF));
 
                     if ((Registers[_t] & 0x8000) == 0x8000)
                         Registers[_t] = unchecked((int)(0xffff8000 | (uint)Registers[_t]));
                     break;
-                case Opcodes.LWR:
+                case Opcodes.LWR: // TODO: LWR and LWL are incorrect according to SPIM. docs unclear; no internet
                 case Opcodes.LHU:
-                    Registers[_t] = unchecked((int)(Memory.ReadWord((uint)_i) & 0xFFFF));
+                    Registers[_t] = unchecked((int)(Memory.ReadWord((uint)(_i + Registers[_s])) & 0xFFFF));
                     break;
                 case Opcodes.LWL:
-                    Registers[_t] = unchecked((int)(Memory.ReadWord((uint)_i) & 0xFFFF0000));
+                    Registers[_t] = unchecked((int)(Memory.ReadWord((uint)(_i + Registers[_s])) & 0xFFFF0000));
                     break;
                 case Opcodes.LUI:
-                    Registers[_t] = unchecked((int)(((uint)_i) << 16));
+                    Registers[_t] = unchecked((int)(((uint)(_i + Registers[_s])) << 16));
                     break;
                 case Opcodes.LW:
-                    Registers[_t] = unchecked((int)Memory.ReadWord((uint)(Registers[_s] + _i)));
+                    Registers[_t] = unchecked((int)Memory.ReadWord((uint)(_i + Registers[_s])));
                     break;
                 #endregion
 

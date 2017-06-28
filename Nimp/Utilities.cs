@@ -23,11 +23,12 @@ namespace Nimp
             if (op == 0x00 && Enum.IsDefined(typeof(AluFuncs), func))
                 func_str = string.Format("({0})", Enum.GetName(typeof(AluFuncs), func));
 
-            Console.WriteLine("opcode: 0x{0:X2}{5}, $s: ${1:00}, $t: ${2:00}, $d: ${3:00}, func: 0x{4:X2}{6}",
+            Console.WriteLine("opcode: 0x{0:X2}{6}, $s: {1}, $t: {2}, $d: {3}, imm: {4}, func: 0x{5:X2}{7}",
                 GetOpcode(i),
-                GetS(i),
-                GetT(i),
-                GetD(i),
+                RegisterNames[GetS(i)],
+                RegisterNames[GetT(i)],
+                RegisterNames[GetD(i)],
+                GetI(i),
                 GetFunc(i),
                 op_str,
                 func_str);
@@ -69,7 +70,13 @@ namespace Nimp
             "memory"
         };
 
+        public static List<string> OpcodeCommands = new List<string>()
+        {
+            "break"
+        };
+
         public static List<string> History = new List<string>();
+        public static List<string> OpcodeList = new List<string>();
 
         public static string SmartReadline()
         {
@@ -103,9 +110,12 @@ namespace Nimp
                     autocomplete_pool = AutocompleteCommands.ToList();
                     autocomplete_full = false;
                 }
-                else
+                else if(words.Length > 1)
                 {
-                    autocomplete_pool = RegisterNames.ToList();
+                    if (OpcodeCommands.Contains(words[0]))
+                        autocomplete_pool = OpcodeList;
+                    else
+                        autocomplete_pool = RegisterNames.ToList();
                     autocomplete_full = true;
                 }
 
@@ -280,6 +290,11 @@ namespace Nimp
                         }
                         break;
                     default:
+                        if (KeyAliases.ContainsKey(key.Key))
+                        {
+                            return KeyAliases[key.Key];
+                        }
+
                         if (key.KeyChar == '\0')
                             break;
 

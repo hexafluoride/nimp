@@ -14,6 +14,8 @@ namespace Nimp
     {
         static void Main(string[] args)
         {
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.GetCultureInfo("en-US");
+            Utilities.OpcodeList = Enum.GetNames(typeof(Opcodes)).Concat(Enum.GetNames(typeof(AluFuncs))).Select(s => s.ToLower()).ToList();
             var reader = new StreamReader("./mips.hex");
 
             while(!reader.EndOfStream)
