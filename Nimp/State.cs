@@ -43,8 +43,8 @@ namespace Nimp
             running = true;
 
             // mock memory layout
-            Registers[29] = 0xffff00;
-            Registers[28] = 0x100000;
+            Registers[29] = 0x7fffffff;
+            Registers[28] = 0x10008000;
 
             sw = Stopwatch.StartNew();
 
@@ -62,6 +62,7 @@ namespace Nimp
 
             sw.Stop();
             Console.WriteLine("Executed {0} instructions in {1} milliseconds({2:0.00} MIPS)", Count, sw.ElapsedMilliseconds, (Count / (sw.ElapsedMilliseconds / 1000d)) / 1000000d);
+            Console.WriteLine("{0} cache hits, {1} cache misses", Memory.CacheHits, Memory.CacheMisses);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -137,13 +138,19 @@ namespace Nimp
 
                 #region loads
                 case Opcodes.LB:
-                    Registers[_t] = unchecked((int)(Memory.ReadWord((uint)_i) & 0x800000FF));
+                    Registers[_t] = unchecked((int)(Memory.ReadByte((uint)_i)));
+
+                    if ((Registers[_t] & 0x80) == 0x80)
+                        Registers[_t] = unchecked((int)(0xffffff80 | (uint)Registers[_t]));
                     break;
                 case Opcodes.LBU:
-                    Registers[_t] = Memory.Buffer[_i];
+                    Registers[_t] = Memory.ReadByte(unchecked((uint)_i));
                     break;
                 case Opcodes.LH:
-                    Registers[_t] = unchecked((int)(Memory.ReadWord((uint)_i) & 0x8000FFFF));
+                    Registers[_t] = unchecked((int)(Memory.ReadWord((uint)_i + 2) & 0xFFFF));
+
+                    if ((Registers[_t] & 0x8000) == 0x8000)
+                        Registers[_t] = unchecked((int)(0xffff8000 | (uint)Registers[_t]));
                     break;
                 case Opcodes.LWR:
                 case Opcodes.LHU:
@@ -162,11 +169,11 @@ namespace Nimp
 
                 #region stores
                 case Opcodes.SB:
-                    Memory.Buffer[_i] = unchecked((byte)(Registers[_t] & 0xFF));
+                    Memory.WriteByte(unchecked((uint)_i), unchecked((byte)(Registers[_t] & 0xFF)));
                     break;
                 case Opcodes.SH:
-                    Memory.Buffer[_i] = unchecked((byte)((Registers[_t] & 0xFF00) >> 8));
-                    Memory.Buffer[_i + 1] = unchecked((byte)(Registers[_t] & 0xFF));
+                    Memory.WriteByte(unchecked((uint)_i), unchecked((byte)((Registers[_t] & 0xFF00) >> 8)));
+                    Memory.WriteByte(unchecked((uint)_i + 1), unchecked((byte)(Registers[_t] & 0xFF)));
                     break;
                 case Opcodes.SW:
                     Memory.WriteWord(unchecked((uint)Registers[_t]), unchecked((uint)(_i + Registers[_s])));
@@ -369,9 +376,13 @@ namespace Nimp
                             Console.Write(Registers[4]);
                             break;
                         case 4:
-                            for(uint p = unchecked((uint)Registers[4]); Memory.Buffer[p] > 0; p++)
+                            uint p = unchecked((uint)Registers[4]);
+                            var page = Memory.GetPage(p);
+                            uint location = p & 0xFFF;
+
+                            for (; page[location] > 0 && location < page.Length; location++)
                             {
-                                Console.Write((char)Memory.Buffer[p]);
+                                Console.Write((char)page[location]);
                             }
                             break;
                         case 10:

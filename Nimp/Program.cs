@@ -17,7 +17,6 @@ namespace Nimp
             var reader = new StreamReader("./mips.hex");
 
             State s = new State();
-            uint counter = 0x400000;
 
             while(!reader.EndOfStream)
             {
