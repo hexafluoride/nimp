@@ -69,6 +69,8 @@ namespace Nimp
             "memory"
         };
 
+        public static List<string> History = new List<string>();
+
         public static string SmartReadline()
         {
             var key = Console.ReadKey(true);
@@ -88,6 +90,8 @@ namespace Nimp
             List<string> possibilities = new List<string>();
             int autocomplete_index = -1;
             int autocomplete_word_index = 0;
+            bool autocomplete_full = false;
+            int history_index = -1;
  
             while(true)
             {
@@ -97,21 +101,24 @@ namespace Nimp
                 if (words.Length == 1)
                 {
                     autocomplete_pool = AutocompleteCommands.ToList();
+                    autocomplete_full = false;
                 }
                 else
                 {
                     autocomplete_pool = RegisterNames.ToList();
+                    autocomplete_full = true;
                 }
 
                 autocomplete_word_index = words.Length - 1;
 
                 string partial = words.Last().ToLower();
 
-                if (!autocomplete_pool.Contains(partial)) // we don't wanna autocomplete full commands
+                if (autocomplete_full || !autocomplete_pool.Contains(partial)) // we don't wanna autocomplete full commands
                 {
                     if (autocomplete_pool.Any(c => c.StartsWith(partial)))
                     {
                         var possibilities_temp = autocomplete_pool.Where(c => c.StartsWith(partial)).ToList();
+
                         if (!possibilities.SequenceEqual(possibilities_temp)) // don't reset autocomplete index
                         {
                             possibilities = possibilities_temp;
@@ -125,6 +132,9 @@ namespace Nimp
                 else
                     autocomplete = false;
 
+                if (buffer.Length == 0)
+                    autocomplete = false;
+
                 string autocomplete_left = "";
 
                 if(autocomplete)
@@ -134,9 +144,19 @@ namespace Nimp
                 if (!autocomplete)
                     possibility_indicator = "";
 
+                int cursor = index + 4;
+
                 Console.CursorLeft = 0;
                 Console.Write(">>> ");
-                Console.Write(buffer);
+
+                if(4 + buffer.Length + autocomplete_left.Length + 2 + possibility_indicator.Length >= Console.BufferWidth)
+                {
+                    int offset = (4 + buffer.Length + autocomplete_left.Length + 2 + possibility_indicator.Length) - Console.BufferWidth;
+                    Console.Write(buffer.Substring(offset));
+                    cursor -= offset;
+                }
+                else
+                    Console.Write(buffer);
 
                 Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.Write(autocomplete_left);
@@ -174,6 +194,7 @@ namespace Nimp
                         break;
                     case ConsoleKey.Enter:
                         Console.WriteLine();
+                        History.Add(buffer);
                         return buffer;
                     case ConsoleKey.Backspace:
                         if (index == 0)
@@ -208,15 +229,45 @@ namespace Nimp
                         index = buffer.Length;
                         break;
                     case ConsoleKey.UpArrow:
-                        if(autocomplete)
+                        if (autocomplete)
                         {
                             autocomplete_index = (autocomplete_index - 1) < 0 ? 0 : (autocomplete_index - 1);
+                        }
+                        else if (History.Any())
+                        {
+                            if (history_index == -1)
+                                history_index = History.Count - 1;
+                            else
+                                history_index = (history_index - 1) < 0 ? 0 : (history_index - 1);
+
+                            buffer = History[history_index];
+                            index = 0;
                         }
                         break;
                     case ConsoleKey.DownArrow:
                         if(autocomplete)
                         {
-                            autocomplete_index = (autocomplete_index + 1) >= possibilities.Count ? autocomplete_index - 1 : (autocomplete_index + 1);
+                            autocomplete_index = (autocomplete_index + 1) >= possibilities.Count ? autocomplete_index : (autocomplete_index + 1);
+                        }
+                        else if(History.Any())
+                        {
+                            if (history_index == -1)
+                                history_index = History.Count - 1;
+                            else
+                            {
+                                if ((history_index + 1) >= History.Count)
+                                {
+                                    history_index = -1;
+                                    buffer = "";
+                                    index = 0;
+                                    break;
+                                }
+                                else
+                                    history_index++;
+                            }
+
+                            buffer = History[history_index];
+                            index = 0;
                         }
                         break;
                     default:
