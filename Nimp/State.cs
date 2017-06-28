@@ -77,7 +77,7 @@ namespace Nimp
 
                             if (arg.Length == 0)
                             {
-                                Console.WriteLine("Usage: break [0x<addr> | <opcode> | <func> | clear]");
+                                Console.WriteLine(Utilities.CommandHelp["break"]);
                                 goto start_step;
                             }
 
@@ -117,7 +117,7 @@ namespace Nimp
 
                             if(arg.Length == 0)
                             {
-                                Console.WriteLine("Usage: step [count]");
+                                Console.WriteLine(Utilities.CommandHelp["step"]);
                                 goto start_step;
                             }
 
@@ -144,7 +144,7 @@ namespace Nimp
                         case "register":
                             if(arg.Length == 0)
                             {
-                                Console.WriteLine("Usage: register [$<register shorthand> | <register id>]");
+                                Console.WriteLine(Utilities.CommandHelp["register"]);
                                 goto start_step;
                             }
 
@@ -162,7 +162,7 @@ namespace Nimp
                         case "memory":
                             if(arg.Length == 0)
                             {
-                                Console.WriteLine("Usage: memory [0x<address> | $<register shorthand> | <register id>]");
+                                Console.WriteLine(Utilities.CommandHelp["memory"]);
                                 goto start_step;
                             }
 
@@ -185,6 +185,16 @@ namespace Nimp
                             Console.WriteLine("{0:X8} = {1:X8} ({1})", addr, Memory.ReadWord(addr));
                             Console.WriteLine("         =     {0:X4} ({0})", Memory.ReadWord(addr) >> 16);
                             Console.WriteLine("         =       {0:X2} ({0})", Memory.ReadWord(addr) >> 24);
+                            goto start_step;
+                        case "h":
+                        case "help":
+                        case "?":
+                            if (arg.Any() && Utilities.CommandHelp.ContainsKey(arg[0]))
+                            {
+                                Console.WriteLine(Utilities.CommandHelp[arg[0]]);
+                            }
+                            else
+                                Console.WriteLine(Utilities.CommandHelp["help"]);
                             goto start_step;
                         case "step-once":
                             step_once = true;

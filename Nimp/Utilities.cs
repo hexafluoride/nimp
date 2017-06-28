@@ -60,6 +60,57 @@ namespace Nimp
             { ConsoleKey.Enter, "step-smart" }
         };
 
+        public static Dictionary<string, string> CommandHelp = new Dictionary<string, string>()
+        {
+            {"dump", "Usage: dump\n" +
+                "\n" +
+                "Dumps all integer registers, then displays PC and dumps the current instruction.\n"},
+
+            {"break", "Usage: break [0x<addr> | <opcode> | <func> | clear] [quiet]\n" +
+                "\n" +
+                "Sets a breakpoint to match the given parameter.\n" +
+                "\n" +
+                "\t0xaddr\tSets a breakpoint at the address 0x<addr>.\n" + 
+                "\topcode\tSets a breakpoint for the given opcode.\n" +
+                "\tfunc\tSets a breakpoint for the given func.\n" +
+                "\tclear\tClears all breakpoints.\n" +
+                "\tquiet\tSteps quietly to next breakpoint.\n"},
+
+            {"step", "Usage: step <count> [quiet]\n" +
+                "\n" +
+                "Steps forward <count> instructions.\n" +
+                "\n" +
+                "\tcount\tThe number of instructions to step forward.\n" + 
+                "\tquiet\tSteps quietly.\n"},
+
+            {"continue", "Usage: continue [quiet]\n" +
+                "\n" +
+                "Clears all breakpoints and continues execution.\n" +
+                "\n" +
+                "\tquiet\tIf provided, instructions will no longer be printed on each cycle."},
+
+            {"register", "Usage: register [$<register mnemonic> | <register number>]\n" +
+                "\n" +
+                "Displays the contents of a register.\n" +
+                "\n" +
+                "\t$<register mnemonic>\tThe shorthand form of a register(i.e. $s0, $ra, $sp).\n" +
+                "\t<register number>\tThe numeric form of a register.\n"},
+
+            {"memory", "Usage: memory [<address in hex> | $<register mnemonic> | <register number>]\n" +
+                "\n" +
+                "Displays the word, halfword and byte in base 16 and 10 at the given address.\n" +
+                "\n" +
+                "\t$<register mnemonic>\tUses the address in a register provided by its shorthand(i.e. $s0, $ra, $sp).\n" +
+                "\t<register number>\tUses the address in a register provided by its number.\n" +
+                "\t<address in hex>\tUses the provided address.\n"},
+
+            {"help", "Usage: help <command>\n" +
+                "\n" +
+                "Displays help for the given command. If no command is specified, displays this text.\n" +
+                "\n" +
+                "Available commands:\n"}
+        };
+
         public static List<string> AutocompleteCommands = new List<string>()
         {
             "dump",
@@ -67,7 +118,8 @@ namespace Nimp
             "step",
             "continue",
             "register",
-            "memory"
+            "memory",
+            "help"
         };
 
         public static List<string> OpcodeCommands = new List<string>()
@@ -126,8 +178,10 @@ namespace Nimp
                 {
                     if (OpcodeCommands.Contains(words[0]))
                         autocomplete_pool = OpcodeList;
-                    else if(RegisterCommands.Contains(words[0]))
+                    else if (RegisterCommands.Contains(words[0]))
                         autocomplete_pool = RegisterNames.ToList();
+                    else if (words[0] == "help")
+                        autocomplete_pool = CommandHelp.Keys.ToList();
 
                     if (AdditionalComplete.ContainsKey(words[0]))
                         autocomplete_pool = autocomplete_pool.Concat(AdditionalComplete[words[0]]).ToList();
