@@ -35,7 +35,7 @@ namespace Nimp
                     int count = uint.TryParse(words[2], NumberStyles.HexNumber, null, out test) ? 4 : 1;
                     
                     for (uint i = 0; i < 4; i++)
-                        s.Memory.WriteWord(Convert.ToUInt32(words[i + 1], 16), start + (i * 4));
+                        Memory.WriteWord(Convert.ToUInt32(words[i + 1], 16), start + (i * 4));
                 }
                 catch
                 {

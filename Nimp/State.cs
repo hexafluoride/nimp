@@ -10,7 +10,6 @@ namespace Nimp
 {
     public class State
     {
-        public Memory Memory = new Memory();
         public int[] Registers = new int[32];
         public int HI = 0;
         public int LO = 0;
