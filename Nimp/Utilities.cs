@@ -75,6 +75,18 @@ namespace Nimp
             "break"
         };
 
+        public static List<string> RegisterCommands = new List<string>()
+        {
+            "register",
+            "memory"
+        };
+
+        public static Dictionary<string, List<string>> AdditionalComplete = new Dictionary<string, List<string>>()
+        {
+            {"break", new List<string>() { "clear", "quiet" } },
+            {"continue", new List<string>() { "quiet" } }
+        };
+
         public static List<string> History = new List<string>();
         public static List<string> OpcodeList = new List<string>();
 
@@ -114,8 +126,12 @@ namespace Nimp
                 {
                     if (OpcodeCommands.Contains(words[0]))
                         autocomplete_pool = OpcodeList;
-                    else
+                    else if(RegisterCommands.Contains(words[0]))
                         autocomplete_pool = RegisterNames.ToList();
+
+                    if (AdditionalComplete.ContainsKey(words[0]))
+                        autocomplete_pool = autocomplete_pool.Concat(AdditionalComplete[words[0]]).ToList();
+
                     autocomplete_full = true;
                 }
 
