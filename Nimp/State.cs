@@ -38,7 +38,7 @@ namespace Nimp
 
             // mock memory layout
             Registers[29] = unchecked((int)Memory.StackStart);
-            Registers[28] = 0x10008000;
+            Registers[28] = 0x10010000;
 
             sw = Stopwatch.StartNew();
 

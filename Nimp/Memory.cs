@@ -9,13 +9,13 @@ namespace Nimp
 {
     public static class Memory
     {
-        public static byte[][] Pages = new byte[2 << 20][];
+        public static byte[][] Pages = new byte[1 << 20][];
         static byte[] _cp;
         static uint _cpid = uint.MaxValue;
 
         public static uint StackStart = 0x7fffffff;
-        public static uint StackSize = 2 << 16; // 64kb stack page
-        public static byte[] StackPage = new byte[2 << 16];
+        public static uint StackSize = 1 << 16; // 64kb stack page
+        public static byte[] StackPage = new byte[1 << 16];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] GetPage(uint location)
@@ -40,7 +40,7 @@ namespace Nimp
                 _cpid = pid;
 
                 if (page == null)
-                    return _cp = Pages[pid] = new byte[(2 << 12)];
+                    return _cp = Pages[pid] = new byte[(1 << 12)];
 
                 return _cp = page;
             }
