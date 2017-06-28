@@ -15,9 +15,7 @@ namespace Nimp
         static void Main(string[] args)
         {
             var reader = new StreamReader("./mips.hex");
-
-            State s = new State();
-
+            
             while(!reader.EndOfStream)
             {
                 string line = reader.ReadLine();
@@ -42,14 +40,14 @@ namespace Nimp
                 }
             }
 
-            Task.Factory.StartNew(s.Loop);
+            Task.Factory.StartNew(State.Loop);
 
             ulong last_count = 0;
 
             while(true)
             {
                 Thread.Sleep(1000);
-                ulong count = s.Count;
+                ulong count = State.Count;
                 //Console.WriteLine("{0:0.00} MIPS", (count - last_count) / 1000000d);
                 last_count = count;
             }

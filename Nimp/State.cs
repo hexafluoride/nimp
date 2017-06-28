@@ -8,36 +8,31 @@ using System.Threading.Tasks;
 
 namespace Nimp
 {
-    public class State
+    public static class State
     {
-        public int[] Registers = new int[32];
-        public int HI = 0;
-        public int LO = 0;
+        public static int[] Registers = new int[32];
+        public static int HI = 0;
+        public static int LO = 0;
 
-        public uint PC = 0x400000;
+        public static uint PC = 0x400000;
 
-        private uint _instruction;
-        private long _opcode;
-        private long _func;
-        private int _i;
-        private long _d;
-        private long _s;
-        private long _t;
-        private int _shift;
-        private uint _jumped = 4;
-        private Stopwatch sw;
+        public static uint _instruction;
+        public static long _opcode;
+        public static long _func;
+        public static int _i;
+        public static long _d;
+        public static long _s;
+        public static long _t;
+        public static int _shift;
+        public static uint _jumped = 4;
+        public static Stopwatch sw;
 
-        private bool running = true;
-        private bool step = true;
+        public static bool running = true;
+        public static bool step = true;
 
-        public ulong Count = 0;
+        public static ulong Count = 0;
 
-        public State()
-        {
-
-        }
-
-        public void Loop()
+        public static void Loop()
         {
             running = true;
 
@@ -65,14 +60,14 @@ namespace Nimp
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Step()
+        public static void Step()
         {
             Decode();
             Execute();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Decode()
+        public static void Decode()
         {
             uint word = Memory.ReadWord(PC);
             _instruction = word;
@@ -91,7 +86,7 @@ namespace Nimp
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Execute()
+        public static void Execute()
         {
             Registers[0] = 0;
             uint i;
@@ -252,7 +247,7 @@ namespace Nimp
             _jumped = 4;
         }
 
-        private void DumpRegisters()
+        public static void DumpRegisters()
         {
             bool flag = false;
 
@@ -270,7 +265,7 @@ namespace Nimp
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void HandleALU()
+        public static void HandleALU()
         {
             switch ((AluFuncs)_func)
             {
