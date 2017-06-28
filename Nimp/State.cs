@@ -37,7 +37,7 @@ namespace Nimp
             running = true;
 
             // mock memory layout
-            Registers[29] = 0x7fffffff;
+            Registers[29] = unchecked((int)Memory.StackStart);
             Registers[28] = 0x10008000;
 
             sw = Stopwatch.StartNew();
@@ -56,7 +56,6 @@ namespace Nimp
 
             sw.Stop();
             Console.WriteLine("Executed {0} instructions in {1} milliseconds({2:0.00} MIPS)", Count, sw.ElapsedMilliseconds, (Count / (sw.ElapsedMilliseconds / 1000d)) / 1000000d);
-            Console.WriteLine("{0} cache hits, {1} cache misses", Memory.CacheHits, Memory.CacheMisses);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -243,8 +242,11 @@ namespace Nimp
                     break;
             }
 
-            PC += _jumped;
-            _jumped = 4;
+            unchecked
+            {
+                PC += _jumped;
+                _jumped = 4;
+            }
         }
 
         public static void DumpRegisters()

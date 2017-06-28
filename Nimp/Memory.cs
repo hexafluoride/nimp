@@ -13,42 +13,37 @@ namespace Nimp
         static byte[] _cp;
         static uint _cpid = uint.MaxValue;
 
-        public static uint CacheMisses = 0;
-        public static uint CacheHits = 0;
-
         public static uint StackStart = 0x7fffffff;
         public static uint StackSize = 2 << 16; // 64kb stack page
         public static byte[] StackPage = new byte[2 << 16];
 
-        // TODO: Implement stack separately to improve performance
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] GetPage(uint location)
         {
-            if ((location & 0xffff0000) == 0x7fff0000)
-            {
-                // stack
-                //CacheHits++;
-                return StackPage;
+            unchecked
+            { 
+                if ((location & 0xffff0000) == 0x7fff0000)
+                {
+                    // stack
+                    return StackPage;
+                }
+
+                uint pid = location >> 12;
+
+                if (pid == _cpid)
+                {
+                    return _cp;
+                }
+                
+                byte[] page = Pages[pid];
+
+                _cpid = pid;
+
+                if (page == null)
+                    return _cp = Pages[pid] = new byte[(2 << 12)];
+
+                return _cp = page;
             }
-
-            uint pid = location >> 12;
-
-            if (pid == _cpid)
-            {
-                //CacheHits++;
-                return _cp;
-            }
-
-            //CacheMisses++;
-
-            byte[] page = Pages[pid];
-
-            _cpid = pid;
-
-            if (page == null)
-                return _cp = Pages[pid] = new byte[(2 << 12)];
-
-            return _cp = page;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
