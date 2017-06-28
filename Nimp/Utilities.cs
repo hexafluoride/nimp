@@ -96,13 +96,14 @@ namespace Nimp
                 "\t$<register mnemonic>\tThe shorthand form of a register(i.e. $s0, $ra, $sp).\n" +
                 "\t<register number>\tThe numeric form of a register.\n"},
 
-            {"memory", "Usage: memory [<address in hex> | $<register mnemonic> | <register number>]\n" +
+            {"memory", "Usage: memory [<address in hex> | $<register mnemonic> | <register number> | pc]\n" +
                 "\n" +
                 "Displays the word, halfword and byte in base 16 and 10 at the given address.\n" +
                 "\n" +
                 "\t$<register mnemonic>\tUses the address in a register provided by its shorthand(i.e. $s0, $ra, $sp).\n" +
                 "\t<register number>\tUses the address in a register provided by its number.\n" +
-                "\t<address in hex>\tUses the provided address.\n"},
+                "\t<address in hex>\tUses the provided address.\n" +
+                "\tpc\t\t\tUses the current PC(program counter).\n"},
 
             {"help", "Usage: help <command>\n" +
                 "\n" +
@@ -136,7 +137,9 @@ namespace Nimp
         public static Dictionary<string, List<string>> AdditionalComplete = new Dictionary<string, List<string>>()
         {
             {"break", new List<string>() { "clear", "quiet" } },
-            {"continue", new List<string>() { "quiet" } }
+            {"continue", new List<string>() { "quiet" } },
+            {"step", new List<string>() { "quiet" } },
+            {"memory", new List<string>() { "pc" } }
         };
 
         public static List<string> History = new List<string>();
@@ -296,6 +299,7 @@ namespace Nimp
                         {
                             buffer = buffer.Substring(0, index - 1) + buffer.Substring(index);
                         }
+                        history_index = -1;
                         index--;
                         break;
                     case ConsoleKey.Delete:
@@ -309,7 +313,7 @@ namespace Nimp
                         {
                             buffer = buffer.Substring(0, index) + buffer.Substring(index + 1);
                         }
-
+                        history_index = -1;
                         break;
                     case ConsoleKey.Home:
                         index = 0;
@@ -318,7 +322,7 @@ namespace Nimp
                         index = buffer.Length;
                         break;
                     case ConsoleKey.UpArrow:
-                        if (autocomplete)
+                        if (autocomplete && history_index == -1)
                         {
                             autocomplete_index = (autocomplete_index - 1) < 0 ? 0 : (autocomplete_index - 1);
                         }
@@ -334,7 +338,7 @@ namespace Nimp
                         }
                         break;
                     case ConsoleKey.DownArrow:
-                        if(autocomplete)
+                        if(autocomplete && history_index == -1)
                         {
                             autocomplete_index = (autocomplete_index + 1) >= possibilities.Count ? autocomplete_index : (autocomplete_index + 1);
                         }
@@ -364,6 +368,7 @@ namespace Nimp
                         {
                             return KeyAliases[key.Key];
                         }
+                        history_index = -1;
 
                         if (key.KeyChar == '\0')
                             break;

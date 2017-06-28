@@ -126,6 +126,14 @@ namespace Nimp
                                 _break_count = count;
                                 step = step_once = false;
                             }
+                            else
+                            {
+                                Console.WriteLine(Utilities.CommandHelp["step"]);
+                                goto start_step;
+                            }
+
+                            if (arg.Contains("quiet"))
+                                quiet = true;
                             break;
                         case "c":
                         case "continue":
@@ -169,7 +177,11 @@ namespace Nimp
                             arg[0] = arg[0].ToLower();
                             addr = 0;
 
-                            if(!uint.TryParse(arg[0], NumberStyles.HexNumber, null, out addr))
+                            if (arg[0].ToLower() == "pc")
+                            {
+                                addr = PC;
+                            }
+                            else if (!uint.TryParse(arg[0], NumberStyles.HexNumber, null, out addr))
                             {
                                 reg = Utilities.ParseRegister(arg[0]);
 
