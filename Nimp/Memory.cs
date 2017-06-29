@@ -10,7 +10,7 @@ namespace Nimp
     public static class Memory
     {
         public static byte[][] Pages = new byte[1 << 20][];
-        static byte[] _cp;
+        static byte[] _cp; // cached page
         static uint _cpid = uint.MaxValue;
 
         public static uint StackStart = 0x7fffffff;
@@ -28,20 +28,18 @@ namespace Nimp
                     return StackPage;
                 }
 
-                uint pid = location >> 12;
+                uint pid = location >> 12; // calculate page id
 
                 if (pid == _cpid)
                 {
-                    return _cp;
+                    return _cp; // return cached page
                 }
                 
                 byte[] page = Pages[pid];
-
-                _cpid = pid;
+                _cpid = pid; // write to cache
 
                 if (page == null)
                     return _cp = Pages[pid] = new byte[(1 << 12)];
-
                 return _cp = page;
             }
         }
@@ -59,6 +57,8 @@ namespace Nimp
             byte[] page = GetPage(location);
             page[location & 0xFFF] = v;
         }
+
+        // TODO: Handle unaligned reads across pages
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ReadWord(uint location)

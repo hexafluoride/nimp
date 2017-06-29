@@ -105,6 +105,10 @@ namespace Nimp
                 "\t<address in hex>\tUses the provided address.\n" +
                 "\tpc\t\t\tUses the current PC(program counter).\n"},
 
+            {"exit", "Usage: exit\n" +
+                "\n" +
+                "Stops execution.\n"},
+
             {"help", "Usage: help <command>\n" +
                 "\n" +
                 "Displays help for the given command. If no command is specified, displays this text.\n" +
@@ -120,7 +124,8 @@ namespace Nimp
             "continue",
             "register",
             "memory",
-            "help"
+            "help",
+            "exit"
         };
 
         public static List<string> OpcodeCommands = new List<string>()

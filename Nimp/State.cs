@@ -58,8 +58,17 @@ namespace Nimp
 #if STEP
                 if (step || step_once || BrokeLastCycle())
                 {
+                    if(quiet)
+                    {
+                        quiet = false;
+                        Console.Write("[{0:X8}] ", PC);
+                        Utilities.DumpInstruction(_instruction);
+                    }
+
                     start_step:
+                    sw.Stop();
                     string line = Utilities.SmartReadline();
+                    sw.Start();
                     var words = line.Split(' ');
                     var command = words[0].ToLower();
                     var arg = words.Skip(1).ToArray();
@@ -161,6 +170,7 @@ namespace Nimp
                             if(reg == -1)
                             {
                                 Console.WriteLine("Unrecognized register {0}", arg[0]);
+                                goto start_step;
                             }
 
                             Console.WriteLine("{0} = {1:X8} ({1})", Utilities.RegisterNames[reg], Registers[reg]);
@@ -197,6 +207,7 @@ namespace Nimp
                             Console.WriteLine("{0:X8} = {1:X8} ({1})", addr, Memory.ReadWord(addr));
                             Console.WriteLine("         =     {0:X4} ({0})", Memory.ReadWord(addr) >> 16);
                             Console.WriteLine("         =       {0:X2} ({0})", Memory.ReadWord(addr) >> 24);
+                            Utilities.DumpInstruction(Memory.ReadWord(addr));
                             goto start_step;
                         case "h":
                         case "help":
@@ -219,6 +230,10 @@ namespace Nimp
                             //    step = step_once = false;
                             //else
                                 step_once = true;
+                            break;
+                        case "exit":
+                        case "quit":
+                            running = false;
                             break;
                     }
                 }
@@ -311,8 +326,8 @@ namespace Nimp
             _s = (word & (0x1F << 21)) >> 21;
             _t = (word & (0x1F << 16)) >> 16;
             _d = (word & (0x1F << 11)) >> 11;
-            _shift = (int)((word & (0x1F << 6)) >> 6);
-            _i = (int)(word & (0xFFFF));
+            _shift = unchecked((int)((word & (0x1F << 6)) >> 6));
+            _i = unchecked((int)(word & (0xFFFF)));
             _func = word & (0x3F);
 
 #if STEP
@@ -336,7 +351,7 @@ namespace Nimp
             uint i;
             _old_pc = PC;
 
-            switch ((Opcodes)_opcode)
+            switch (unchecked((Opcodes)_opcode))
             {
                 case Opcodes.ALU:
                     HandleALU();
@@ -457,7 +472,7 @@ namespace Nimp
                             _jumped = 0;
                         }
                     }
-                    if (_t == 0 || _t == 16)
+                    else if (_t == 0 || _t == 16)
                     {
                         if (Registers[_s] < 0)
                         {
@@ -495,27 +510,10 @@ namespace Nimp
             }
         }
 
-        public static void DumpRegisters()
-        {
-            bool flag = false;
-
-            for (int i = 0; i < 32; i++)
-            {
-                if (Registers[i] != 0)
-                {
-                    flag = true;
-                    Console.Write("${0:00}: {1}{2}", i, Registers[i], i == 31 ? "" : ", ");
-                }
-            }
-
-            if (flag)
-                Console.WriteLine();
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void HandleALU()
         {
-            switch ((AluFuncs)_func)
+            switch (unchecked((AluFuncs)_func))
             {
                 #region addition, subtraction
                 case AluFuncs.ADD:
