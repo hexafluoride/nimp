@@ -18,16 +18,16 @@ namespace Nimp
         static uint _old_pc = 0x400000;
         public static uint PC = 0x400000;
 
-        static uint _instruction;
-        static long _opcode;
-        static long _func;
-        static int _i;
-        static long _d;
-        static long _s;
-        static long _t;
-        static int _shift;
-        static uint _jumped = 4;
-        static Stopwatch sw;
+        internal static uint _instruction;
+        internal static long _opcode;
+        internal static long _func;
+        internal static int _i;
+        internal static long _d;
+        internal static long _s;
+        internal static long _t;
+        internal static int _shift;
+        internal static uint _jumped = 4;
+        internal static Stopwatch sw;
 
         static bool running = true;
         static bool step = true;
@@ -53,7 +53,28 @@ namespace Nimp
 
             while(running)
             {
-                Decode();
+                uint word = Memory.ReadWord(State.PC);
+                State._instruction = word;
+                State._opcode = (word & (0x3F << 26)) >> 26;
+                State._s = (word & (0x1F << 21)) >> 21;
+                State._t = (word & (0x1F << 16)) >> 16;
+                State._d = (word & (0x1F << 11)) >> 11;
+                State._shift = unchecked((int)((word & (0x1F << 6)) >> 6));
+                State._i = unchecked((int)(word & (0xFFFF)));
+                State._func = word & (0x3F);
+#if STEP
+                if (!quiet)
+                {
+                    Console.Write("[{0:X8}] ", PC);
+                    Utilities.DumpInstruction(_instruction);
+                }
+
+                if (_break_count > -1)
+                {
+                    _break_count--;
+                }
+#endif
+
                 #region interface
 #if STEP
                 if (step || step_once || BrokeLastCycle())
@@ -313,35 +334,8 @@ namespace Nimp
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Step()
         {
-            Decode();
+            Memory.Decode();
             Execute();
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Decode()
-        {
-            uint word = Memory.ReadWord(PC);
-            _instruction = word;
-            _opcode = (word & (0x3F << 26)) >> 26;
-            _s = (word & (0x1F << 21)) >> 21;
-            _t = (word & (0x1F << 16)) >> 16;
-            _d = (word & (0x1F << 11)) >> 11;
-            _shift = unchecked((int)((word & (0x1F << 6)) >> 6));
-            _i = unchecked((int)(word & (0xFFFF)));
-            _func = word & (0x3F);
-
-#if STEP
-            if (!quiet)
-            {
-                Console.Write("[{0:X8}] ", PC);
-                Utilities.DumpInstruction(word);
-            }
-            
-            if(_break_count > -1)
-            {
-                _break_count--;
-            }
-#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

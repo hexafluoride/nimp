@@ -43,6 +43,7 @@ namespace Nimp
                 }
             }
 
+            Task.Factory.StartNew(Memory.CacheThread);
             Task.Factory.StartNew(State.Loop);
             Thread.Sleep(-1);
         }
