@@ -34,6 +34,12 @@ namespace Nimp
                 {
                     return _cp; // return cached page
                 }
+
+                if(_cpid != 0xffffffff)
+                {
+                    // commit cached page
+                    Pages[_cpid] = _cp;
+                }
                 
                 byte[] page = Pages[pid];
                 _cpid = pid; // write to cache
