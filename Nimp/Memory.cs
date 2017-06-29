@@ -2,23 +2,29 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Nimp
 {
-    public static class Memory
+    public unsafe static class Memory
     {
-        public static byte[][] Pages = new byte[1 << 20][];
-        static byte[] _cp; // cached page
+        public static byte*[] Pages = new byte*[1 << 20];
+        static byte* _cp; // cached page
         static uint _cpid = uint.MaxValue;
 
         public static uint StackStart = 0x7fffffff;
         public static uint StackSize = 1 << 16; // 64kb stack page
-        public static byte[] StackPage = new byte[1 << 16];
+        public static byte* StackPage;
+
+        public static void Init()
+        {
+            Memory.StackPage = (byte*)Marshal.AllocHGlobal(1 << 16);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] GetPage(uint location)
+        public static byte* GetPage(uint location)
         {
             unchecked
             { 
@@ -41,11 +47,11 @@ namespace Nimp
                     Pages[_cpid] = _cp;
                 }
                 
-                byte[] page = Pages[pid];
+                byte* page = Pages[pid];
                 _cpid = pid; // write to cache
 
                 if (page == null)
-                    return _cp = Pages[pid] = new byte[(1 << 12)];
+                    return _cp = Pages[pid] = (byte*)Marshal.AllocHGlobal(1 << 12);
                 return _cp = page;
             }
         }
@@ -53,14 +59,14 @@ namespace Nimp
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte ReadByte(uint location)
         {
-            byte[] page = GetPage(location);
+            byte* page = GetPage(location);
             return page[location & 0xFFF];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteByte(uint location, byte v)
         {
-            byte[] page = GetPage(location);
+            byte* page = GetPage(location);
             page[location & 0xFFF] = v;
         }
 
@@ -69,7 +75,7 @@ namespace Nimp
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ReadWord(uint location)
         {
-            byte[] page = GetPage(location);
+            byte* page = GetPage(location);
 
             location &= 0xFFF;
 
@@ -82,7 +88,7 @@ namespace Nimp
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteWord(uint word, uint location)
         {
-            byte[] page = GetPage(location);
+            byte* page = GetPage(location);
 
             location &= 0xFFF;
 

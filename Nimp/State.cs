@@ -617,12 +617,12 @@ namespace Nimp
                             break;
                         case 4:
                             uint p = unchecked((uint)Registers[4]);
-                            var page = Memory.GetPage(p);
-                            uint location = p & 0xFFF;
+                            byte c = Memory.ReadByte(p);
 
-                            for (; page[location] > 0 && location < page.Length; location++)
+                            while(c > 0)
                             {
-                                Console.Write((char)page[location]);
+                                Console.Write((char)c);
+                                c = Memory.ReadByte(++p);
                             }
                             break;
                         case 10:
