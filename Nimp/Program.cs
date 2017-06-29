@@ -47,7 +47,20 @@ namespace Nimp
             }
 
             Task.Factory.StartNew(State.Loop);
-            Thread.Sleep(-1);
+
+            ulong prev_count = 0;
+
+            while(State.Running)
+            {
+                ulong count = State.Count;
+                ulong count_delta = count - prev_count;
+                Console.Title = string.Format("{0:0.00} MIPS, cycle {1}", (count_delta / 1000000d), count);
+                prev_count = count;
+
+                Thread.Sleep(1000);
+            }
+
+            Console.ReadLine();
         }
     }
 }

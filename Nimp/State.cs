@@ -29,7 +29,7 @@ namespace Nimp
         static uint _jumped = 4;
         static Stopwatch sw;
 
-        static bool running = true;
+        public static bool Running = true;
         static bool step = true;
         static bool quiet = false;
         static bool step_once = true;
@@ -43,7 +43,7 @@ namespace Nimp
 
         public static void Loop()
         {
-            running = true;
+            Running = true;
 
             // mock memory layout
             Registers[29] = unchecked((int)Memory.StackStart);
@@ -51,7 +51,7 @@ namespace Nimp
 
             sw = Stopwatch.StartNew();
 
-            while(running)
+            while(Running)
             {
                 Decode();
                 #region interface
@@ -626,7 +626,7 @@ namespace Nimp
                             }
                             break;
                         case 10:
-                            running = false;
+                            Running = false;
                             break;
                         case 11:
                             Console.Write((char)Registers[4]);

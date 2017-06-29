@@ -78,7 +78,7 @@ namespace Nimp
             byte* page = GetPage(location);
 
             location &= 0xFFF;
-
+            
             return page[location] |
                 ((uint)page[location + 1] << 8) |
                 ((uint)page[location + 2] << 16) |
