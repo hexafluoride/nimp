@@ -6,6 +6,7 @@ Not very. It's difficult to piece together information. Right now, most instruct
 
 ## How fast is this implementation?
 ~40 MIPS on an i5-2540m
+
 ~90 MIPS on a Ryzen 1700
 
 ## How do I load programs?
@@ -21,6 +22,9 @@ I'm sure you can figure it out.
 
 ## Anything else?
 0x7fffffff-0x7fff0000 is designated as stack space and has its own jumbo page.
+
 $sp is initialized to 0x7fffffff
+
 $gp is initialized to 0x10008000
+
 You can find various documentation in [docs/](https://github.com/hexafluoride/nimp/tree/master/docs).
