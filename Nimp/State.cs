@@ -32,6 +32,7 @@ namespace Nimp
         static Stopwatch sw;
 
         public static bool Running = true;
+        public static ManualResetEvent StoppedSemaphore = new ManualResetEvent(false);
         static bool step = true;
         static bool quiet = false;
         static bool step_once = true;
@@ -235,7 +236,8 @@ namespace Nimp
                             break;
                         case "exit":
                         case "quit":
-                            running = false;
+                            Running = false;
+                            StoppedSemaphore.Set();
                             break;
                     }
                 }
@@ -246,6 +248,7 @@ namespace Nimp
             }
 
             sw.Stop();
+            StoppedSemaphore.Set();
             Console.WriteLine("Executed {0} instructions in {1} milliseconds({2:0.00} MIPS)", Count, sw.ElapsedMilliseconds, (Count / (sw.ElapsedMilliseconds / 1000d)) / 1000000d);
         }
 

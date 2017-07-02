@@ -50,15 +50,15 @@ namespace Nimp
 
             ulong prev_count = 0;
 
-            while(State.Running)
+            do
             {
                 ulong count = State.Count;
                 ulong count_delta = count - prev_count;
-                Console.Title = string.Format("{0:0.00} MIPS, cycle {1}", (count_delta / 1000000d), count);
+                Console.Title = string.Format("{0:0.00} MIPS, cycle {1}", (count_delta / 500000d), count);
                 prev_count = count;
+            } while (!State.StoppedSemaphore.WaitOne(500));
 
-                Thread.Sleep(1000);
-            }
+            Console.Title += " - stopped execution";
 
             Console.ReadLine();
         }
