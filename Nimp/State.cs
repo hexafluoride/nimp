@@ -4,14 +4,16 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Nimp
 {
-    public static class State
+    public unsafe static class State
     {
-        public static int[] Registers = new int[32];
+        public static int* Registers;
         public static int HI = 0;
         public static int LO = 0;
 
@@ -320,15 +322,17 @@ namespace Nimp
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Decode()
         {
-            uint word = Memory.ReadWord(PC);
-            _instruction = word;
-            _opcode = (word & (0x3F << 26)) >> 26;
-            _s = (word & (0x1F << 21)) >> 21;
-            _t = (word & (0x1F << 16)) >> 16;
-            _d = (word & (0x1F << 11)) >> 11;
-            _shift = unchecked((int)((word & (0x1F << 6)) >> 6));
-            _i = unchecked((int)(word & (0xFFFF)));
-            _func = word & (0x3F);
+            unchecked
+            {
+                _instruction = Memory.ReadWord(PC);
+                _opcode = (_instruction & (0x3F << 26)) >> 26;
+                _s = (_instruction & (0x1F << 21)) >> 21;
+                _t = (_instruction & (0x1F << 16)) >> 16;
+                _d = (_instruction & (0x1F << 11)) >> 11;
+                _shift = (int)((_instruction & (0x1F << 6)) >> 6);
+                _i = (int)(_instruction & (0xFFFF));
+                _func = _instruction & (0x3F);
+            }
 
 #if STEP
             if (!quiet)
@@ -350,7 +354,7 @@ namespace Nimp
             Registers[0] = 0;
             uint i;
             _old_pc = PC;
-
+            
             switch (unchecked((Opcodes)_opcode))
             {
                 case Opcodes.ALU:

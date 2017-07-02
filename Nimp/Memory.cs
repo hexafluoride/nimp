@@ -21,6 +21,7 @@ namespace Nimp
         public static void Init()
         {
             Memory.StackPage = (byte*)Marshal.AllocHGlobal(1 << 16);
+            State.Registers = (int*)Marshal.AllocHGlobal(32 * 4);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
