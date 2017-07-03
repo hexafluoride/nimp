@@ -20,8 +20,19 @@ namespace Nimp
 
         public static void Init()
         {
-            Memory.StackPage = (byte*)Marshal.AllocHGlobal(1 << 16);
-            State.Registers = (int*)Marshal.AllocHGlobal(32 * 4);
+            Memory.StackPage = (byte*)calloc(1 << 16);
+            State.Registers = (int*)calloc(32 * 4);
+        }
+
+        public static IntPtr calloc(int len)
+        {
+            var ret = Marshal.AllocHGlobal(len);
+            byte* p = (byte*)ret;
+
+            for (int i = 0; i < len; i++)
+                p[i] = 0;
+
+            return ret;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -42,11 +53,11 @@ namespace Nimp
                     return _cp; // return cached page
                 }
 
-                if(_cpid != 0xffffffff)
-                {
-                    // commit cached page
-                    Pages[_cpid] = _cp;
-                }
+                //if(_cpid != 0xffffffff)
+                //{
+                //    // commit cached page
+                //    Pages[_cpid] = _cp;
+                //}
                 
                 byte* page = Pages[pid];
                 _cpid = pid; // write to cache
@@ -92,7 +103,7 @@ namespace Nimp
             byte* page = GetPage(location);
 
             location &= 0xFFF;
-
+            
             page[location] = (byte)(word & 0xFF);
             page[location + 1] = (byte)((word & 0xFF00) >> 8);
             page[location + 2] = (byte)((word & 0xFF0000) >> 16);

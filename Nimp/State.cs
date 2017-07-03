@@ -16,8 +16,7 @@ namespace Nimp
         public static int* Registers;
         public static int HI = 0;
         public static int LO = 0;
-
-        static uint _old_pc = 0x400000;
+        
         public static uint PC = 0x400000;
 
         static uint _instruction;
@@ -341,7 +340,7 @@ namespace Nimp
             if (!quiet)
             {
                 Console.Write("[{0:X8}] ", PC);
-                Utilities.DumpInstruction(word);
+                Utilities.DumpInstruction(_instruction);
             }
             
             if(_break_count > -1)
@@ -355,8 +354,6 @@ namespace Nimp
         public static void Execute()
         {
             Registers[0] = 0;
-            uint i;
-            _old_pc = PC;
             
             switch (unchecked((Opcodes)_opcode))
             {
@@ -386,13 +383,11 @@ namespace Nimp
                 #region jump
                 case Opcodes.JAL:
                     Registers[31] = unchecked((int)PC + 4);
-                    i = (_instruction & 0x3FFFFFF) << 2;
-                    PC = (PC & 0xf0000000) | i;
+                    PC = (PC & 0xf0000000) | ((_instruction & 0x3FFFFFF) << 2);
                     _jumped = 0;
                     break;
                 case Opcodes.J:
-                    i = (_instruction & 0x3FFFFFF) << 2;
-                    PC = (PC & 0xf0000000) | i;
+                    PC = (PC & 0xf0000000) | ((_instruction & 0x3FFFFFF) << 2);
                     _jumped = 0;
                     break;
                 #endregion
